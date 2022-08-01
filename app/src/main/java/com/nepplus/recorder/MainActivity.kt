@@ -10,6 +10,13 @@ import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
 
+    private val soundVisualizerView : SoundVisualizerView by lazy {
+        findViewById(R.id.soundVisualizerView)
+    }
+
+    private val recordTimeTextView: CountUpView by lazy {
+        findViewById(R.id.recordTimeTextView)
+    }
     private  val resetButton : Button by lazy{
         findViewById(R.id.resetButton)
     }
@@ -41,9 +48,10 @@ class MainActivity : AppCompatActivity() {
 
 
         requestAudioPermission()
-        initView()
+        initViews()
         bindViews()
         initVariables()
+
     }
 
     override fun onRequestPermissionsResult(
@@ -66,11 +74,16 @@ class MainActivity : AppCompatActivity() {
         requestPermissions(requiredPermissions, REQUEST_RECORD_AUDIO_PERMISSION)
     }
 
-    private fun initView(){
+    private fun initViews(){
         recordButton.updateIconWithState(state)
     }
 
     private  fun bindViews(){
+        //녹음소리와 visualizer 를 연결하기위한 변수 전달
+        soundVisualizerView.onRequestCurrentAmplitude = {
+            recorder?.maxAmplitude ?: 0
+        }
+
         recordButton.setOnClickListener{
             when(state){
                 State.BEFORE_RECORDING -> startRecording()
@@ -104,6 +117,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         recorder?.start()
+        soundVisualizerView.startVisualizing(false)
+        recordTimeTextView.startCountUp()
         state = State.ON_RECORDING
     }
 
@@ -114,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         recorder = null
+        soundVisualizerView.stopVisualizing()
         state = State.AFTER_RECORDING
     }
 
@@ -126,12 +142,16 @@ class MainActivity : AppCompatActivity() {
             }
 
         player?.start()
+        soundVisualizerView.startVisualizing(true)
+        recordTimeTextView.startCountUp()
         state = State.ON_PLAYING
     }
 
     private fun stopPlaying(){
         player?.release()
         player = null
+        soundVisualizerView.stopVisualizing()
+        recordTimeTextView.stopCountUp()
         state = State.AFTER_RECORDING
     }
 
